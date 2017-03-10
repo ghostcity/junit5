@@ -716,7 +716,11 @@ public final class ReflectionUtils {
 		if (lower.getParameterCount() != upper.getParameterCount()) {
 			return false;
 		}
-		// Check for method sub-signatures.
+		// trivial case: parameter types exactly match
+		if (Arrays.equals(lower.getParameterTypes(), upper.getParameterTypes())) {
+			return true;
+		}
+		// param count is equal, but types do not match exactly: check for method sub-signatures
 		// https://docs.oracle.com/javase/specs/jls/se8/html/jls-8.html#jls-8.4.2
 		for (int i = 0; i < lower.getParameterCount(); i++) {
 			Class<?> lowerType = lower.getParameterTypes()[i];
@@ -724,6 +728,12 @@ public final class ReflectionUtils {
 			if (!upperType.isAssignableFrom(lowerType)) {
 				return false;
 			}
+		}
+		// lower is sub-signature of upper: check for generics in upper method
+		// guess(?) by comparing toString() and toGenericString() results, instead
+		// of a implementing and using an isOverridden(upper, lower) oracle.
+		if (upper.toString().equals(upper.toGenericString())) {
+			return false;
 		}
 		return true;
 	}
