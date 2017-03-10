@@ -11,6 +11,7 @@
 package org.junit.platform.engine;
 
 import static org.junit.platform.commons.meta.API.Usage.Experimental;
+import static org.junit.platform.commons.meta.API.Usage.Internal;
 
 import java.util.LinkedHashSet;
 import java.util.Optional;
@@ -161,9 +162,31 @@ public interface TestDescriptor {
 
 	/**
 	 * Determine if this descriptor or any of its descendants describes a test.
+	 *
+	 * <p>This method is considered internal API, or in Java 9 syntax: {@code private}
 	 */
+	@API(Internal)
 	default boolean hasTests() {
-		return (isTest() || getChildren().stream().anyMatch(TestDescriptor::hasTests));
+		return isTest() || getChildren().stream().anyMatch(TestDescriptor::hasTests);
+	}
+
+	/**
+	 * Remove this descriptor from hierarchy unless it is a root descriptor or
+	 * itself is a test or any of its children describes a test.
+	 */
+	default void prune() {
+		if (isRoot() || hasTests()) {
+			return;
+		}
+		removeFromHierarchy();
+	}
+
+	/**
+	 * Remove this and descendant descriptors from hierarchy unless it is a root
+	 * descriptor or itself is test or any of its children describes a test.
+	 */
+	default void pruneTree() {
+		accept(TestDescriptor::prune);
 	}
 
 	/**
